@@ -92,8 +92,3 @@ jsdom には `DataTransfer` が無いため、`src/test/dataTransfer.ts` の最�
 
 カードの移動ボタンはホバー時だけ `pointer-events` が有効になるが、jsdom は `:hover` を
 評価しないため、該当するテストでは `pointerEventsCheck` を無効にして押している。
-
-このリポジトリは 9p マウント（Windows ホスト）上にあり、モジュールの読み込みが
-極端に遅い。並列ワーカーだと vitest の 60 秒ワーカー起動タイムアウトに達するため、
-`vitest.config.mts` でワーカーを 1 つに固定している。`node_modules` をネイティブ FS に
-置ける環境では、この設定は外してよい。

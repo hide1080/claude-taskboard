@@ -63,14 +63,6 @@ npm run lint         # ESLint
 npx vitest run src/lib/board.test.ts
 ```
 
-### Vitest がワーカー 1 固定になっている理由
-
-このリポジトリは 9p マウント（Windows ホスト）上にあり、モジュール読み込みが極端に遅い。
-並列ワーカーだと vitest の 60 秒ワーカー起動タイムアウトに達するため、
-`vitest.config.mts` で `pool: "forks"` / `maxWorkers: 1` / `fileParallelism: false` /
-`isolate: false` を固定している。`node_modules` をネイティブ FS に置ける環境ではこの
-制約は外してよいが、外す場合は意図的な変更であることをコミットメッセージ等で明示する。
-
 ## アーキテクチャ
 
 4 列（未着手 / 進行中 / 保留 / 完了）のカンバンボード。状態管理とコンポーネントの責務が
