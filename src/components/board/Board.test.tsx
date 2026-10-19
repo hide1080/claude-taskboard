@@ -154,6 +154,142 @@ describe("Board", () => {
     expect(countOf("in-progress", "進行中")).toHaveTextContent("2");
   });
 
+  describe("検索・フィルター", () => {
+    const filterTasks: Task[] = [
+      {
+        id: "a",
+        title: "API を設計する",
+        description: "REST の仕様",
+        status: "todo",
+        assignee: "田中",
+        priority: "high",
+        dueDate: "",
+      },
+      {
+        id: "b",
+        title: "画面を作る",
+        description: "",
+        status: "todo",
+        assignee: "佐藤",
+        priority: "low",
+        dueDate: "",
+      },
+      {
+        id: "c",
+        title: "テストを書く",
+        description: "",
+        status: "in-progress",
+        assignee: "田中",
+        priority: "low",
+        dueDate: "",
+      },
+    ];
+
+    it("タイトルや説明の検索でカードが絞り込まれる", async () => {
+      const user = setupUser();
+      render(<Board initialTasks={filterTasks} />);
+
+      await user.type(screen.getByRole("searchbox", { name: "タスクを検索" }), "rest");
+
+      expect(screen.getByText("API を設計する")).toBeInTheDocument();
+      expect(screen.queryByText("画面を作る")).not.toBeInTheDocument();
+      expect(screen.queryByText("テストを書く")).not.toBeInTheDocument();
+      expect(screen.getByText("3件中1件を表示")).toBeInTheDocument();
+    });
+
+    it("担当者と優先度を組み合わせて絞り込める", async () => {
+      const user = setupUser();
+      render(<Board initialTasks={filterTasks} />);
+
+      await user.selectOptions(screen.getByLabelText("担当者で絞り込み"), "田中");
+      await user.selectOptions(screen.getByLabelText("優先度で絞り込み"), "low");
+
+      expect(screen.getByText("テストを書く")).toBeInTheDocument();
+      expect(screen.queryByText("API を設計する")).not.toBeInTheDocument();
+      expect(screen.queryByText("画面を作る")).not.toBeInTheDocument();
+    });
+
+    it("クリアすると全件が戻り、件数表示も元に戻る", async () => {
+      const user = setupUser();
+      render(<Board initialTasks={filterTasks} />);
+
+      await user.selectOptions(screen.getByLabelText("優先度で絞り込み"), "high");
+      await user.click(screen.getByRole("button", { name: "条件をクリア" }));
+
+      expect(screen.getByText("API を設計する")).toBeInTheDocument();
+      expect(screen.getByText("画面を作る")).toBeInTheDocument();
+      expect(screen.getByText("テストを書く")).toBeInTheDocument();
+      expect(screen.getByText("3件のタスク")).toBeInTheDocument();
+    });
+
+    it("絞り込み中でもカードを別の列へ移動できる", () => {
+      render(<Board initialTasks={filterTasks} />);
+
+      dragAndDrop("a", "done");
+
+      expect(column("done").getByText("API を設計する")).toBeInTheDocument();
+    });
+
+    it("担当者の選択肢は追加したタスクの担当者も含む", async () => {
+      const user = setupUser();
+      render(<Board initialTasks={filterTasks} generateId={() => "new-1"} />);
+
+      await user.click(screen.getByRole("button", { name: "新規タスク" }));
+      await user.type(screen.getByLabelText("タイトル"), "新しい仕事");
+      await user.type(screen.getByLabelText("担当者"), "鈴木");
+      await user.click(screen.getByRole("button", { name: "追加" }));
+
+      expect(
+        within(screen.getByLabelText("担当者で絞り込み")).getByRole("option", {
+          name: "鈴木",
+        }),
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe("永続化", () => {
+    it("追加したタスクは再読み込み（再マウント）後も残る", async () => {
+      const user = setupUser();
+      const first = render(
+        <Board initialTasks={initialTasks} generateId={() => "saved-1"} />,
+      );
+
+      await user.click(screen.getByRole("button", { name: "新規タスク" }));
+      await user.type(screen.getByLabelText("タイトル"), "忘れてはいけない");
+      await user.click(screen.getByRole("button", { name: "追加" }));
+      first.unmount();
+
+      render(<Board initialTasks={initialTasks} />);
+
+      expect(column("todo").getByText("忘れてはいけない")).toBeInTheDocument();
+      expect(screen.getByText("3件のタスク")).toBeInTheDocument();
+    });
+
+    it("ドラッグで移動した列も再読み込み後に保たれる", () => {
+      const first = render(<Board initialTasks={initialTasks} />);
+
+      dragAndDrop("task-1", "done");
+      first.unmount();
+
+      render(<Board initialTasks={initialTasks} />);
+
+      expect(column("done").getByText("設計する")).toBeInTheDocument();
+      expect(column("todo").queryByText("設計する")).not.toBeInTheDocument();
+    });
+
+    it("検索語は保存せず、再読み込み後は空に戻る", async () => {
+      const user = setupUser();
+      const first = render(<Board initialTasks={initialTasks} />);
+      await user.type(screen.getByRole("searchbox", { name: "タスクを検索" }), "設計");
+      first.unmount();
+
+      render(<Board initialTasks={initialTasks} />);
+
+      expect(screen.getByRole("searchbox", { name: "タスクを検索" })).toHaveValue("");
+      expect(screen.getByText("実装する")).toBeInTheDocument();
+    });
+  });
+
   it("カラムを追加の枠は表示するだけで操作子にしない", () => {
     render(<Board initialTasks={initialTasks} />);
 

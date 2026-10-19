@@ -77,11 +77,23 @@ npx vitest run src/lib/board.test.ts
   単一の情報源（`PRIORITIES`）。期限切れ判定は `lib/board.ts` の `isOverdue(task, today)`
   で、`today` を引数にして時刻のモックを不要にしている。`TaskCard` の既定の「今日」は
   `hooks/useToday.ts`（SSR では空文字、ハイドレーション後に実日付）が供給する。
-- **`hooks/useBoard.ts`** — `boardReducer` を `useReducer` でラップし、列への振り分け済み
-  データをコンポーネントに渡す。
-- **`components/board/Board.tsx`** — 全体のまとめ役。ドラッグ中のタスク id や、追加フォーム
-  を開いている列といった画面の一時状態はここと `AddTaskForm` のみが持つ（他のコンポーネント
-  は受け取った値を描画し操作を親へ通知するだけ）。
+- **`lib/board.ts` の検索・絞り込み** — `filterTasks(tasks, filter)`（タイトル・説明の部分一致 +
+  担当者・優先度の完全一致、すべて AND）と `assigneesOf`（担当者の選択肢）。条件は `TaskFilter`、
+  空は `EMPTY_FILTER`。条件が空なら同一参照を返す。
+- **`lib/taskStorage.ts` / `lib/taskStore.ts`** — localStorage（キー `taskboard:tasks:v1`）への
+  永続化。`parseStoredTasks` は壊れた JSON や不正な要素を含むと `null`（全体を捨てて初期タスクに戻す）。
+  `createTaskStore` は `useSyncExternalStore` 用のストアで、保存文字列が変わらない限り同一参照を返し、
+  書き込みが失敗してもメモリ上では状態を進める。サーバー描画・ハイドレーションでは常に初期タスク
+  （`useToday` と同じ方針）で、ハイドレーション後に保存済みの内容へ切り替わる。
+- **`hooks/useStoredTasks.ts`** — `createTaskStore` を `useSyncExternalStore` に繋ぐ。`useReducer` と
+  同じ `[state, dispatch]` を返す。
+- **`hooks/useBoard.ts`** — `useStoredTasks` の状態に `filter` を適用し、列への振り分け済み
+  データ（`columns`）と `totalCount` / `visibleCount` / `assignees` をコンポーネントに渡す。
+- **`components/board/Board.tsx`** — 全体のまとめ役。ドラッグ中のタスク id、追加フォーム
+  を開いている列、検索・絞り込み条件といった画面の一時状態はここと `AddTaskForm` のみが持つ
+  （他のコンポーネントは受け取った値を描画し操作を親へ通知するだけ）。検索・絞り込み条件は
+  保存せず、リロードで空に戻る（永続化するのはタスクのみ）。`BoardToolbar` が検索欄と
+  担当者・優先度の絞り込みを描画する。
 - **`lib/dragData.ts`** — HTML5 Drag and Drop の `dataTransfer` 読み書きを集約。jsdom には
   `DataTransfer` が無いため、テストでは `src/test/dataTransfer.ts` の最小スタブを
   `fireEvent.dragStart` / `drop` に渡して再現している。
@@ -95,7 +107,9 @@ npx vitest run src/lib/board.test.ts
 ## テスト方針
 
 - `lib/*.test.ts` — 状態遷移・列定義・dataTransfer の純粋なロジック。
-- `hooks/useBoard.test.ts` — 追加・移動がボードの状態に反映されることの確認。
+- `hooks/useBoard.test.ts` — 追加・移動・絞り込みがボードの状態に反映されることと、再マウント後も
+  タスクが残ること。localStorage は `src/test/setup.ts` が各テスト前に `clear()` し、
+  `vi.stubGlobal` した差し替えも各テスト後に元へ戻す。
 - `components/board/*.test.tsx` — 各コンポーネントの表示と通知。`Board.test.tsx` では
   ドラッグ&ドロップによる列移動を通しで確認する。
 - カードの移動ボタン（`←` / `→`）はホバー時だけ `pointer-events` が有効になるが、jsdom は

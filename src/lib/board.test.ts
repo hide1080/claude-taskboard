@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  EMPTY_FILTER,
   addTask,
+  assigneesOf,
   boardReducer,
   createTask,
+  filterTasks,
   isOverdue,
   isValidDraft,
   moveTask,
@@ -152,6 +155,89 @@ describe("tasksInColumn", () => {
     ];
 
     expect(tasksInColumn(state, "todo").map((t) => t.id)).toEqual(["a", "c"]);
+  });
+});
+
+describe("filterTasks", () => {
+  const state: BoardState = [
+    task("a", {
+      title: "API を設計する",
+      description: "REST の仕様",
+      assignee: "田中",
+      priority: "high",
+    }),
+    task("b", {
+      title: "画面を作る",
+      description: "Design 確認",
+      assignee: "佐藤",
+      priority: "low",
+    }),
+    task("c", { title: "テストを書く", assignee: "田中", priority: "low" }),
+  ];
+  const ids = (tasks: readonly Task[]) => tasks.map((t) => t.id);
+
+  it("条件が空なら全件を返す", () => {
+    expect(ids(filterTasks(state, EMPTY_FILTER))).toEqual(["a", "b", "c"]);
+  });
+
+  it("タイトルで検索できる", () => {
+    expect(ids(filterTasks(state, { ...EMPTY_FILTER, query: "画面" }))).toEqual(
+      ["b"],
+    );
+  });
+
+  it("説明だけに含まれる語でも検索できる", () => {
+    expect(ids(filterTasks(state, { ...EMPTY_FILTER, query: "REST" }))).toEqual(
+      ["a"],
+    );
+  });
+
+  it("大文字小文字と前後の空白を無視する", () => {
+    expect(
+      ids(filterTasks(state, { ...EMPTY_FILTER, query: "  design " })),
+    ).toEqual(["b"]);
+  });
+
+  it("担当者は完全一致で絞り込む", () => {
+    expect(
+      ids(filterTasks(state, { ...EMPTY_FILTER, assignee: "田中" })),
+    ).toEqual(["a", "c"]);
+  });
+
+  it("優先度で絞り込む", () => {
+    expect(
+      ids(filterTasks(state, { ...EMPTY_FILTER, priority: "low" })),
+    ).toEqual(["b", "c"]);
+  });
+
+  it("検索・担当者・優先度は AND で組み合わさる", () => {
+    expect(
+      ids(
+        filterTasks(state, { query: "テスト", assignee: "田中", priority: "low" }),
+      ),
+    ).toEqual(["c"]);
+    expect(
+      ids(
+        filterTasks(state, { query: "画面", assignee: "田中", priority: "" }),
+      ),
+    ).toEqual([]);
+  });
+
+  it("条件が空のときは同一参照を返す", () => {
+    expect(filterTasks(state, EMPTY_FILTER)).toBe(state);
+  });
+});
+
+describe("assigneesOf", () => {
+  it("重複と未設定を除いて、出現順に返す", () => {
+    const state: BoardState = [
+      task("a", { assignee: "田中" }),
+      task("b", { assignee: "" }),
+      task("c", { assignee: "佐藤" }),
+      task("d", { assignee: "田中" }),
+    ];
+
+    expect(assigneesOf(state)).toEqual(["田中", "佐藤"]);
   });
 });
 
