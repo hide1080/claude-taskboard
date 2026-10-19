@@ -1,17 +1,27 @@
 export interface BoardHeaderProps {
   taskCount: number;
+  /** 絞り込み中だけ渡す。表示中の件数。 */
+  visibleCount?: number;
   onAddTaskClick: () => void;
 }
 
-/** ボード名・総タスク数・新規タスクボタン。 */
-export function BoardHeader({ taskCount, onAddTaskClick }: BoardHeaderProps) {
+/** ボード名・総タスク数（絞り込み中は表示件数も）・新規タスクボタン。 */
+export function BoardHeader({
+  taskCount,
+  visibleCount,
+  onAddTaskClick,
+}: BoardHeaderProps) {
   return (
     <header className="mb-10 flex items-center justify-between gap-4">
       <div className="flex items-baseline gap-4">
         <h1 className="text-[34px] leading-none font-bold tracking-tight">
           TaskBoard
         </h1>
-        <p className="text-[14px] text-muted">{taskCount}件のタスク</p>
+        <p className="text-[14px] text-muted">
+          {visibleCount === undefined
+            ? `${taskCount}件のタスク`
+            : `${taskCount}件中${visibleCount}件を表示`}
+        </p>
       </div>
 
       <button
