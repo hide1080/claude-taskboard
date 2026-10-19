@@ -7,7 +7,15 @@ import { createDataTransfer } from "@/test/dataTransfer";
 import type { Task } from "@/types/task";
 
 const tasks: Task[] = [
-  { id: "task-1", title: "設計する", description: "", status: "todo" },
+  {
+    id: "task-1",
+    title: "設計する",
+    description: "",
+    status: "todo",
+    assignee: "",
+    priority: "medium",
+    dueDate: "",
+  },
 ];
 
 function renderColumn({

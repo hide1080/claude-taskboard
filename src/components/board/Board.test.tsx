@@ -6,8 +6,24 @@ import { createDataTransfer } from "@/test/dataTransfer";
 import type { Task } from "@/types/task";
 
 const initialTasks: Task[] = [
-  { id: "task-1", title: "設計する", description: "画面構成", status: "todo" },
-  { id: "task-2", title: "実装する", description: "", status: "in-progress" },
+  {
+    id: "task-1",
+    title: "設計する",
+    description: "画面構成",
+    status: "todo",
+    assignee: "",
+    priority: "medium",
+    dueDate: "",
+  },
+  {
+    id: "task-2",
+    title: "実装する",
+    description: "",
+    status: "in-progress",
+    assignee: "",
+    priority: "medium",
+    dueDate: "",
+  },
 ];
 
 /** 移動ボタンはホバー時だけ押せるが、jsdom は :hover を評価しない。 */
@@ -89,6 +105,23 @@ describe("Board", () => {
     expect(countOf("in-progress", "進行中")).toHaveTextContent("1");
     // 追加したらフォームは閉じる。
     expect(screen.queryByRole("form", { name: "新しいタスク" })).not.toBeInTheDocument();
+  });
+
+  it("担当者・優先度・期限を入力して追加するとカードに表示される", async () => {
+    const user = setupUser();
+    render(<Board initialTasks={[]} generateId={() => "generated-1"} />);
+
+    await user.click(screen.getByRole("button", { name: "新規タスク" }));
+    await user.type(screen.getByLabelText("タイトル"), "テストを書く");
+    await user.type(screen.getByLabelText("担当者"), "田中");
+    await user.selectOptions(screen.getByLabelText("優先度"), "high");
+    await user.type(screen.getByLabelText("期限"), "2999-12-31");
+    await user.click(screen.getByRole("button", { name: "追加" }));
+
+    const card = within(screen.getByTestId("task-generated-1"));
+    expect(card.getByText("優先度: 高")).toBeInTheDocument();
+    expect(card.getByText("担当: 田中")).toBeInTheDocument();
+    expect(card.getByText("期限: 2999-12-31")).toBeInTheDocument();
   });
 
   it("ドラッグ&ドロップでタスクが別の列へ移動する", () => {

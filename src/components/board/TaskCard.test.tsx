@@ -11,6 +11,9 @@ const task: Task = {
   title: "設計する",
   description: "画面構成を決める",
   status: "in-progress",
+  assignee: "",
+  priority: "medium",
+  dueDate: "",
 };
 
 /**
@@ -23,7 +26,7 @@ function setupUser() {
   });
 }
 
-function renderCard(overrides: Partial<Task> = {}) {
+function renderCard(overrides: Partial<Task> = {}, today = "2026-10-19") {
   const handlers = {
     onDragStart: vi.fn(),
     onDragEnd: vi.fn(),
@@ -32,7 +35,12 @@ function renderCard(overrides: Partial<Task> = {}) {
 
   render(
     <ul>
-      <TaskCard task={{ ...task, ...overrides }} isDragging={false} {...handlers} />
+      <TaskCard
+        task={{ ...task, ...overrides }}
+        today={today}
+        isDragging={false}
+        {...handlers}
+      />
     </ul>,
   );
 
@@ -45,6 +53,37 @@ describe("TaskCard", () => {
 
     expect(screen.getByRole("heading", { name: "設計する" })).toBeInTheDocument();
     expect(screen.getByText("画面構成を決める")).toBeInTheDocument();
+  });
+
+  it("優先度・担当者・期限を表示する", () => {
+    renderCard({ priority: "high", assignee: "田中", dueDate: "2026-10-31" });
+
+    expect(screen.getByText("優先度: 高")).toBeInTheDocument();
+    expect(screen.getByText("担当: 田中")).toBeInTheDocument();
+    expect(screen.getByText("期限: 2026-10-31")).toBeInTheDocument();
+  });
+
+  it("担当者と期限が未設定なら表示しない（優先度は常に表示）", () => {
+    renderCard();
+
+    expect(screen.getByText("優先度: 中")).toBeInTheDocument();
+    expect(screen.queryByText(/担当:/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/期限:/)).not.toBeInTheDocument();
+  });
+
+  it("期限を過ぎた未完了タスクは期限切れと分かるようにする", () => {
+    renderCard({ dueDate: "2026-10-18" });
+
+    expect(screen.getByText("期限: 2026-10-18（期限切れ）")).toBeInTheDocument();
+  });
+
+  it.each([
+    ["当日", { dueDate: "2026-10-19" }],
+    ["完了済み", { dueDate: "2026-10-18", status: "done" as const }],
+  ])("%s は期限切れにしない", (_name, overrides) => {
+    renderCard(overrides);
+
+    expect(screen.queryByText(/期限切れ/)).not.toBeInTheDocument();
   });
 
   it("dragstart でタスク id を dataTransfer に載せ、親に通知する", () => {

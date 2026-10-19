@@ -1,12 +1,17 @@
 "use client";
 
 import type { DragEvent } from "react";
+import { useToday } from "@/hooks/useToday";
+import { isOverdue } from "@/lib/board";
 import { adjacentStatus, columnLabel } from "@/lib/columns";
 import { setDragTaskId } from "@/lib/dragData";
-import type { Task, TaskStatus } from "@/types/task";
+import { priorityLabel } from "@/lib/priorities";
+import type { Task, TaskPriority, TaskStatus } from "@/types/task";
 
 export interface TaskCardProps {
   task: Task;
+  /** 期限切れ判定に使う今日の日付（YYYY-MM-DD）。省略時は実際の今日。テストで固定したいときに渡す。 */
+  today?: string;
   isDragging: boolean;
   onDragStart: (taskId: string) => void;
   onDragEnd: () => void;
@@ -16,11 +21,14 @@ export interface TaskCardProps {
 /** 1 タスクを表すドラッグ可能なカード。状態は持たず、操作は親へ通知する。 */
 export function TaskCard({
   task,
+  today,
   isDragging,
   onDragStart,
   onDragEnd,
   onMove,
 }: TaskCardProps) {
+  const currentDay = useToday();
+  const overdue = isOverdue(task, today ?? currentDay);
   const previous = adjacentStatus(task.status, -1);
   const next = adjacentStatus(task.status, 1);
 
@@ -49,6 +57,23 @@ export function TaskCard({
         </p>
       )}
 
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[12px]">
+        <span
+          className={`rounded-full px-2 py-0.5 font-medium ${priorityClass[task.priority]}`}
+        >
+          優先度: {priorityLabel(task.priority)}
+        </span>
+        {task.assignee !== "" && (
+          <span className="text-muted">担当: {task.assignee}</span>
+        )}
+        {task.dueDate !== "" && (
+          <span className={overdue ? "font-medium text-priority-high" : "text-muted"}>
+            期限: {task.dueDate}
+            {overdue && "（期限切れ）"}
+          </span>
+        )}
+      </div>
+
       {/* デザイン上カードに操作子は出さないが、ドラッグはキーボードから使えない。
           ホバーとフォーカス時だけ現れる移動ボタンで代替手段を残す。 */}
       <div className="pointer-events-none absolute top-2.5 right-2.5 flex gap-1 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100">
@@ -66,6 +91,13 @@ export function TaskCard({
     </li>
   );
 }
+
+/** 優先度バッジの配色。色はテーマ変数（globals.css）から引く。 */
+const priorityClass: Record<TaskPriority, string> = {
+  high: "bg-priority-high/15 text-priority-high",
+  medium: "bg-priority-medium/20 text-priority-medium",
+  low: "bg-priority-low/15 text-priority-low",
+};
 
 function MoveButton({
   direction,
