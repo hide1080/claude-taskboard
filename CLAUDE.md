@@ -73,6 +73,10 @@ npx vitest run src/lib/board.test.ts
   描画時に `tasksInColumn` で列へ振り分ける。
 - **`lib/columns.ts`** — 列の定義（順序・ラベル）の単一の情報源（`COLUMNS`）。画面表示も
   テストもこの配列を参照する。カード移動ボタンの隣接列計算（`adjacentStatus`）もここ。
+- **`lib/priorities.ts`** — 優先度（高/中/低）の定義（順序・ラベル・フォームの既定値）の
+  単一の情報源（`PRIORITIES`）。期限切れ判定は `lib/board.ts` の `isOverdue(task, today)`
+  で、`today` を引数にして時刻のモックを不要にしている。`TaskCard` の既定の「今日」は
+  `hooks/useToday.ts`（SSR では空文字、ハイドレーション後に実日付）が供給する。
 - **`hooks/useBoard.ts`** — `boardReducer` を `useReducer` でラップし、列への振り分け済み
   データをコンポーネントに渡す。
 - **`components/board/Board.tsx`** — 全体のまとめ役。ドラッグ中のタスク id や、追加フォーム

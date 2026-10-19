@@ -4,7 +4,15 @@ import { useBoard } from "@/hooks/useBoard";
 import type { Task } from "@/types/task";
 
 const initialTasks: Task[] = [
-  { id: "task-1", title: "設計する", description: "", status: "todo" },
+  {
+    id: "task-1",
+    title: "設計する",
+    description: "",
+    status: "todo",
+    assignee: "",
+    priority: "medium",
+    dueDate: "",
+  },
 ];
 
 describe("useBoard", () => {
@@ -30,6 +38,9 @@ describe("useBoard", () => {
         title: "テストを書く",
         description: "Vitest",
         status: "in-progress",
+        assignee: "田中",
+        priority: "high",
+        dueDate: "2026-10-31",
       });
     });
 
@@ -40,6 +51,9 @@ describe("useBoard", () => {
         title: "テストを書く",
         description: "Vitest",
         status: "in-progress",
+        assignee: "田中",
+        priority: "high",
+        dueDate: "2026-10-31",
       },
     ]);
   });

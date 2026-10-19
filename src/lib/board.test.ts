@@ -3,25 +3,44 @@ import {
   addTask,
   boardReducer,
   createTask,
+  isOverdue,
   isValidDraft,
   moveTask,
   tasksInColumn,
+  toISODate,
   type BoardState,
 } from "@/lib/board";
-import type { Task } from "@/types/task";
+import type { Task, TaskDraft } from "@/types/task";
 
 const task = (id: string, overrides: Partial<Task> = {}): Task => ({
   id,
   title: `task ${id}`,
   description: "",
   status: "todo",
+  assignee: "",
+  priority: "medium",
+  dueDate: "",
+  ...overrides,
+});
+
+const draft = (overrides: Partial<TaskDraft> = {}): TaskDraft => ({
+  title: "設計する",
+  description: "",
+  status: "todo",
+  assignee: "",
+  priority: "medium",
+  dueDate: "",
   ...overrides,
 });
 
 describe("createTask", () => {
-  it("タイトルと説明の前後の空白を落とす", () => {
+  it("タイトル・説明・担当者の前後の空白を落とす", () => {
     const created = createTask(
-      { title: "  設計する  ", description: "  メモ  ", status: "todo" },
+      draft({
+        title: "  設計する  ",
+        description: "  メモ  ",
+        assignee: "  田中  ",
+      }),
       "id-1",
     );
 
@@ -30,7 +49,20 @@ describe("createTask", () => {
       title: "設計する",
       description: "メモ",
       status: "todo",
+      assignee: "田中",
+      priority: "medium",
+      dueDate: "",
     });
+  });
+
+  it("優先度と期限はそのまま保持する", () => {
+    const created = createTask(
+      draft({ priority: "high", dueDate: "2026-10-31" }),
+      "id-1",
+    );
+
+    expect(created.priority).toBe("high");
+    expect(created.dueDate).toBe("2026-10-31");
   });
 });
 
@@ -40,9 +72,32 @@ describe("isValidDraft", () => {
     ["空文字", "", false],
     ["空白のみ", "   ", false],
   ])("%s は %s → %s", (_name, title, expected) => {
-    expect(
-      isValidDraft({ title: title as string, description: "", status: "todo" }),
-    ).toBe(expected);
+    expect(isValidDraft(draft({ title: title as string }))).toBe(expected);
+  });
+
+  it("担当者・期限が未設定でも追加できる", () => {
+    expect(isValidDraft(draft({ assignee: "", dueDate: "" }))).toBe(true);
+  });
+});
+
+describe("isOverdue", () => {
+  const today = "2026-10-19";
+
+  it.each([
+    ["過去日", "2026-10-18", "todo", true],
+    ["当日", "2026-10-19", "todo", false],
+    ["未来日", "2026-10-20", "todo", false],
+    ["期限未設定", "", "todo", false],
+    ["過去日でも完了済み", "2026-10-18", "done", false],
+  ] as const)("%s (%s, %s) → %s", (_name, dueDate, status, expected) => {
+    expect(isOverdue(task("a", { dueDate, status }), today)).toBe(expected);
+  });
+});
+
+describe("toISODate", () => {
+  it("ローカル日付を YYYY-MM-DD にする（月日はゼロ埋め）", () => {
+    expect(toISODate(new Date(2026, 0, 5, 23, 59))).toBe("2026-01-05");
+    expect(toISODate(new Date(2026, 9, 19, 0, 0))).toBe("2026-10-19");
   });
 });
 
@@ -104,7 +159,12 @@ describe("boardReducer", () => {
   it("add でタスクを追加する", () => {
     const next = boardReducer([], {
       type: "add",
-      draft: { title: "設計する", description: "", status: "in-progress" },
+      draft: draft({
+        status: "in-progress",
+        assignee: "田中",
+        priority: "high",
+        dueDate: "2026-10-31",
+      }),
       id: "id-1",
     });
 
@@ -114,6 +174,9 @@ describe("boardReducer", () => {
         title: "設計する",
         description: "",
         status: "in-progress",
+        assignee: "田中",
+        priority: "high",
+        dueDate: "2026-10-31",
       },
     ]);
   });
@@ -124,7 +187,7 @@ describe("boardReducer", () => {
     expect(
       boardReducer(state, {
         type: "add",
-        draft: { title: "  ", description: "説明だけ", status: "todo" },
+        draft: draft({ title: "  ", description: "説明だけ" }),
         id: "id-1",
       }),
     ).toBe(state);

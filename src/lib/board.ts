@@ -19,7 +19,25 @@ export function createTask(draft: TaskDraft, id: string): Task {
     title: draft.title.trim(),
     description: draft.description.trim(),
     status: draft.status,
+    assignee: draft.assignee.trim(),
+    priority: draft.priority,
+    dueDate: draft.dueDate,
   };
+}
+
+/** ローカル日付を YYYY-MM-DD にする（`<input type="date">` の値と同じ形式）。 */
+export function toISODate(date: Date): string {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
+/**
+ * 期限を過ぎた未完了タスクか。today / dueDate はどちらも YYYY-MM-DD なので文字列比較で足りる。
+ * 完了済みや期限未設定は対象外。today を引数にして、時刻のモックなしでテストできるようにする。
+ */
+export function isOverdue(task: Task, today: string): boolean {
+  return task.status !== "done" && task.dueDate !== "" && task.dueDate < today;
 }
 
 /** タイトルが空（空白のみを含む）の下書きは追加できない。 */
