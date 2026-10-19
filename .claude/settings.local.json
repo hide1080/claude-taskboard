@@ -1,4 +1,8 @@
 {
+  "enabledMcpjsonServers": [
+    "playwright",
+    "context7"
+  ],
   "outputStyle": "Explanatory",
   "sandbox": {
     "enabled": true,

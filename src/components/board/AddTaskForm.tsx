@@ -2,7 +2,8 @@
 
 import { useState, type FormEvent } from "react";
 import { COLUMNS } from "@/lib/columns";
-import type { TaskDraft, TaskStatus } from "@/types/task";
+import { DEFAULT_PRIORITY, PRIORITIES } from "@/lib/priorities";
+import type { TaskDraft, TaskPriority, TaskStatus } from "@/types/task";
 
 export interface AddTaskFormProps {
   /** 開いたときに選んでおく列。 */
@@ -20,6 +21,9 @@ export function AddTaskForm({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState<TaskStatus>(initialStatus);
+  const [assignee, setAssignee] = useState("");
+  const [priority, setPriority] = useState<TaskPriority>(DEFAULT_PRIORITY);
+  const [dueDate, setDueDate] = useState("");
 
   const canSubmit = title.trim() !== "";
 
@@ -27,16 +31,19 @@ export function AddTaskForm({
     event.preventDefault();
     if (!canSubmit) return;
 
-    onSubmit({ title, description, status });
+    onSubmit({ title, description, status, assignee, priority, dueDate });
     setTitle("");
     setDescription("");
+    setAssignee("");
+    setPriority(DEFAULT_PRIORITY);
+    setDueDate("");
   }
 
   return (
     <form
       onSubmit={handleSubmit}
       aria-label="新しいタスク"
-      className="mb-8 flex flex-col gap-4 rounded-xl bg-surface p-5 sm:flex-row sm:items-end"
+      className="mb-8 flex flex-col gap-4 rounded-xl bg-surface p-5 sm:flex-row sm:flex-wrap sm:items-end"
     >
       <Field label="タイトル" className="sm:flex-1">
         <input
@@ -72,6 +79,41 @@ export function AddTaskForm({
             </option>
           ))}
         </select>
+      </Field>
+
+      <Field label="担当者">
+        <input
+          id="task-assignee"
+          value={assignee}
+          onChange={(event) => setAssignee(event.target.value)}
+          placeholder="任意"
+          className={inputClass}
+        />
+      </Field>
+
+      <Field label="優先度">
+        <select
+          id="task-priority"
+          value={priority}
+          onChange={(event) => setPriority(event.target.value as TaskPriority)}
+          className={inputClass}
+        >
+          {PRIORITIES.map((p) => (
+            <option key={p.priority} value={p.priority}>
+              {p.label}
+            </option>
+          ))}
+        </select>
+      </Field>
+
+      <Field label="期限">
+        <input
+          id="task-due-date"
+          type="date"
+          value={dueDate}
+          onChange={(event) => setDueDate(event.target.value)}
+          className={inputClass}
+        />
       </Field>
 
       <div className="flex gap-2">
