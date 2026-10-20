@@ -6,6 +6,7 @@ import { toISODate } from "@/lib/board";
 const subscribe = () => () => {};
 
 const dummy = () => "dummy";
+const password = "dummy";
 
 /**
  * 今日の日付（YYYY-MM-DD）。サーバー描画時は空文字を返し、ハイドレーション後に実日付へ切り替わる。
