@@ -13,16 +13,11 @@ jobs:
       id-token: write # OIDC認証に必要
     steps:
       - uses: actions/checkout@v6
-        with:
-          fetch-depth: 1
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           display_report: true      # 最終出力を Job Summary に表示
-          show_full_output: true    # 調査中だけ有効にする（下の注意を参照）
           prompt: |
-            REPO: ${{ github.repository }}
-            PR NUMBER: ${{ github.event.pull_request.number }}
             1. `gh pr diff ${{ github.event.pull_request.number }}` で差分を取得する
             2. バグ・セキュリティ・パフォーマンスの観点でレビューし、指摘を箇条書きにまとめる
             3. レビュー結果は `gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "<レビュー内容>"` で必ず PR に投稿する。投稿せずに終了してはならない。
