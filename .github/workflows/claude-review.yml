@@ -12,10 +12,17 @@ jobs:
       issues: write
       id-token: write # OIDC認証に必要
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          prompt: "このPRをレビューして、バグ・セキュリティ・パフォーマンスの観点で気になる点を箇条書きで指摘してください。"
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+            このPRをレビューして、バグ・セキュリティ・パフォーマンスの観点で気になる点を箇条書きで指摘してください。
+            結果は `gh pr comment` を使って、このPRにコメントとして投稿してください。
+          claude_args: |
+            --max-turns 10
+            --allowedTools "Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
