@@ -1,0 +1,26 @@
+name: Claude PR Review
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+      issues: write
+      id-token: write # OIDC認証に必要
+    steps:
+      - uses: actions/checkout@v4
+        # with:
+        #   fetch-depth: 0
+      - uses: anthropics/claude-code-action@v1
+        with:
+          aclaude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: |
+            --max-turns 10
+            --model claude-haiku-5-5
+          prompt: |
+            このPRをレビューして、バグ・セキュリティ・パフォーマンスの
+            観点で気になる点を箇条書きで指摘してください。
