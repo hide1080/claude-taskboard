@@ -2,6 +2,12 @@ name: Claude PR Review
 on:
   pull_request:
     types: [opened, synchronize]
+    paths:
+      - "src/**"
+      - "!src/**/*.test.ts" # テストファイルは除外
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true # 同一グループのワークフローが実行中ならキャンセル
 
 jobs:
   review:
@@ -9,7 +15,6 @@ jobs:
     permissions:
       pull-requests: write
       contents: read
-      issues: write
       id-token: write # OIDC認証に必要
     steps:
       - uses: actions/checkout@v6
@@ -17,6 +22,7 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           display_report: true      # 最終出力を Job Summary に表示
+          # show_full_output: true    # 調査中だけ有効にする
           prompt: |
             1. `gh pr diff ${{ github.event.pull_request.number }}` で差分を取得する
             2. バグ・セキュリティ・パフォーマンスの観点でレビューし、指摘を箇条書きにまとめる
@@ -24,6 +30,6 @@ jobs:
             4. 指摘がなくても「指摘事項なし」と投稿する
             5. コマンドが失敗した場合は、エラーメッセージを最終出力にそのまま含める
           claude_args: |
-            --max-turns 15
+            --max-turns 10
             --permission-mode default
-            --allowedTools "Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
+            --allowedTools "Bash(gh pr comment *),Bash(gh pr diff *),Bash(gh pr view *)"
