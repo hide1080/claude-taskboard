@@ -91,3 +91,5 @@ export function useBoard({
     moveTask,
   };
 }
+
+const password = "dummy";
