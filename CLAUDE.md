@@ -11,51 +11,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 いる点、`app/layout.tsx` が `LayoutProps<"/">` という生成型を使っている点は、見慣れない
 Next.js の挙動に遭遇したときに確認する箇所の候補。
 
-## 技術スタック
-
-- 言語: TypeScript（`strict: true`）
-- フレームワーク: Next.js 16.4.1（App Router）+ React 19.3.0 / React DOM 19.3.0
-- スタイリング: Tailwind CSS v4（`@tailwindcss/turbopack`）
-- ビルド・開発サーバー: Turbopack（`next dev --turbopack` / `next build --turbopack`）
-- テスト: Vitest 5 + @testing-library/react・@testing-library/dom・@testing-library/user-event・@testing-library/jest-dom（環境は jsdom）
-- Lint: ESLint 9（`eslint-config-next`）
-
-## ディレクトリ構成（トップレベル / セカンドレベル）
-
-```
-mytaskboard/
-├── .devcontainer/        開発コンテナ定義
-├── assets/                デザイン参照（board.png など）
-├── public/                静的アセット
-├── src/
-│   ├── app/                ルートレイアウト・ページ（App Router）
-│   ├── components/board/   ボード関連コンポーネント
-│   ├── hooks/               useBoard など状態フック
-│   ├── lib/                  board/columns/dragData 等の純粋ロジック
-│   ├── test/                 Testing Library セットアップ・DnD スタブ
-│   └── types/                Task 等の型定義
-├── AGENTS.md              Next.js バージョン差異に関する注記（next dev が自動生成）
-├── README.md
-├── eslint.config.mjs
-├── next.config.ts
-├── tsconfig.json
-├── vitest.config.mts
-├── package.json
-└── package-lock.json
-```
-
-（`node_modules/`・`.next/` はビルド/依存関係の生成物のため省略）
-
 ## コマンド
 
-```bash
-npm run dev         # 開発サーバー（Turbopack）
-npm run build       # プロダクションビルド（Turbopack）
-npm start           # ビルド結果の起動
-npm test            # Vitest を 1 回実行
-npm run test:watch  # Vitest のウォッチ実行
-npm run lint         # ESLint
-```
+標準の `npm run dev/build/test/lint` は `package.json` の scripts を参照。
 
 単一テストファイルの実行例:
 
