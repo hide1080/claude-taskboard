@@ -25,11 +25,12 @@ jobs:
           # show_full_output: true    # 調査中だけ有効にする
           prompt: |
             1. `gh pr diff ${{ github.event.pull_request.number }}` で差分を取得する
-            2. バグ・セキュリティ・パフォーマンスの観点でレビューし、指摘を箇条書きにまとめる
-            3. レビュー結果は `gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "<レビュー内容>"` で必ず PR に投稿する。投稿せずに終了してはならない。
-            4. 指摘がなくても「指摘事項なし」と投稿する
-            5. コマンドが失敗した場合は、エラーメッセージを最終出力にそのまま含める
+            2. バグ・セキュリティ・パフォーマンスの観点でレビューする
+            3. 指摘は 1 件ずつ `mcp__github_inline_comment__create_inline_comment` で、差分の該当ファイル・該当行にインラインコメントとして投稿する。具体的に書き、可能なら修正案も添える。差分に含まれない行には付けない。同じ指摘を重複して投稿しない。
+            4. 最後に総評を `gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "<総評>"` で PR に投稿する。投稿せずに終了してはならない。
+            5. 指摘がなくても、総評として「指摘事項なし」と投稿する
+            6. コマンドやツールが失敗した場合は、エラーメッセージを最終出力にそのまま含める
           claude_args: |
             --max-turns 10
             --permission-mode default
-            --allowedTools "Bash(gh pr comment *),Bash(gh pr diff *),Bash(gh pr view *)"
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment *),Bash(gh pr diff *),Bash(gh pr view *)"
